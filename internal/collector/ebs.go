@@ -9,7 +9,7 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
 
-func unAttachedEBS(ctx context.Context, client *ec2.Client, region string) ([]OrphanResource, error) {
+func UnattachedVolumes(ctx context.Context, client *ec2.Client, region string) ([]OrphanResource, error) {
 	var results []OrphanResource
 
 	// status available indicates unattached voulume

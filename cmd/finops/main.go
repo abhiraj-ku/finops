@@ -7,6 +7,9 @@ import (
 	"log"
 	"os"
 	"text/tabwriter"
+
+	"github.com/abhiraj-ku/finops/internal/awsclient"
+	"github.com/abhiraj-ku/finops/internal/collector"
 )
 
 func main() {
@@ -22,14 +25,14 @@ func main() {
 	}
 
 	fmt.Printf("\n[1/2] Scanning unattached EBS volumes...\n")
-	ebsVolumes, err := collector.CollectUnattachedEBS(ctx, clients.EC2, *region)
+	ebsVolumes, err := collector.UnattachedVolumes(ctx, clients.EC2, *region)
 	if err != nil {
 		log.Fatalf("EBS collection failed: %v", err)
 	}
 	fmt.Printf("Found %d unattached volume(s)\n", len(ebsVolumes))
 
 	fmt.Printf("\n[2/2] Scanning running RDS instances...\n")
-	rdsInstances, err := collector.CollectRunningRDS(ctx, clients.RDS, *region)
+	rdsInstances, err := collector.RunningRdsInfo(ctx, clients.RDS, *region)
 	if err != nil {
 		log.Fatalf("RDS collection failed: %v", err)
 	}
@@ -37,7 +40,6 @@ func main() {
 
 	allResources := append(ebsVolumes, rdsInstances...)
 
-	// Print summary table to stdout
 	fmt.Println()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "RESOURCE ID\tTYPE\tSPEC\tSTATUS\tEST. MONTHLY WASTE")

@@ -14,7 +14,7 @@ type Client struct {
 	Region string
 }
 
-func NewClient(ctx context.Context, region string) (*Client, error) {
+func New(ctx context.Context, region string) (*Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
 		return nil, err
