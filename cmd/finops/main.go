@@ -24,21 +24,31 @@ func main() {
 		log.Fatalf("Client initialization error: %v", err)
 	}
 
-	fmt.Printf("\n[1/2] Scanning unattached EBS volumes...\n")
-	ebsVolumes, err := collector.UnattachedVolumes(ctx, clients.EC2, *region)
+	auditor := collector.NewTelemetryAuditor(clients.CloudWatch)
+
+	fmt.Printf("\n[step 1/2] Auditing EBS volumes...\n")
+	ebsCandidates, err := collector.UnattachedVolumes(ctx, clients.EC2, *region)
 	if err != nil {
 		log.Fatalf("EBS collection failed: %v", err)
 	}
-	fmt.Printf("Found %d unattached volume(s)\n", len(ebsVolumes))
+	verifiedEBS, err := auditor.FilterIdleEBS(ctx, ebsCandidates)
+	if err != nil {
+		log.Fatalf("EBS telemetry audit failed: %v", err)
+	}
+	fmt.Printf("-> Found %d unattached volume(s) with 0 IOPS over 14 days\n", len(verifiedEBS))
 
-	fmt.Printf("\n[2/2] Scanning running RDS instances...\n")
-	rdsInstances, err := collector.RunningRdsInfo(ctx, clients.RDS, *region)
+	fmt.Printf("\n[step 2/2] Auditing RDS instances...\n")
+	rdsCandidates, err := collector.RunningRdsInfo(ctx, clients.RDS, *region)
 	if err != nil {
 		log.Fatalf("RDS collection failed: %v", err)
 	}
-	fmt.Printf("Found %d running RDS instance(s)\n", len(rdsInstances))
+	verifiedRDS, err := auditor.FilterIdleRDS(ctx, rdsCandidates)
+	if err != nil {
+		log.Fatalf("RDS telemetry audit failed: %v", err)
+	}
+	fmt.Printf("-> Found %d RDS instance(s) with 0 connections over 14 days\n", len(verifiedRDS))
 
-	allResources := append(ebsVolumes, rdsInstances...)
+	allResources := append(verifiedEBS, verifiedRDS...)
 
 	fmt.Println()
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
