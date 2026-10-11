@@ -20,4 +20,5 @@ type OrphanResource struct {
 	CreatedAt    time.Time         `json:"created_at"`
 	Tags         map[string]string `json:"tags"`
 	EstimatedMo  float64           `json:"estimated_monthly_cost_usd"`
+	Creator      string            `json:"creator"`
 }

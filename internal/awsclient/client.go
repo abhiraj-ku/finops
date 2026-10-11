@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cloudtrail"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
@@ -13,6 +14,7 @@ type Client struct {
 	EC2        *ec2.Client
 	RDS        *rds.Client
 	CloudWatch *cloudwatch.Client
+	CloudTrail *cloudtrail.Client
 	Region     string
 }
 
@@ -26,6 +28,7 @@ func New(ctx context.Context, region string) (*Client, error) {
 		EC2:        ec2.NewFromConfig(cfg),
 		RDS:        rds.NewFromConfig(cfg),
 		CloudWatch: cloudwatch.NewFromConfig(cfg),
+		CloudTrail: cloudtrail.NewFromConfig(cfg),
 		Region:     region,
 	}, nil
 
