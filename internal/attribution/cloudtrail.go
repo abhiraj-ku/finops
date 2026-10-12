@@ -64,7 +64,6 @@ func (t *Tracker) FindOwner(ctx context.Context, resource collector.OrphanResour
 		}
 	}
 
-	// If the loop finishes and finds nothing, it was created more than 90 days ago.
 	return "unknown (>90 days old)"
 
 }

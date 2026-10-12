@@ -8,8 +8,10 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/abhiraj-ku/finops/internal/attribution"
 	"github.com/abhiraj-ku/finops/internal/awsclient"
 	"github.com/abhiraj-ku/finops/internal/collector"
+	"github.com/abhiraj-ku/finops/internal/remediation"
 )
 
 func main() {
@@ -67,4 +69,49 @@ func main() {
 	w.Flush()
 
 	fmt.Printf("\nTotal Potential Monthly Spend Detected: $%.2f\n\n", totalWaste)
+
+	tracker := attribution.NewTracker(clients.CloudTrail)
+	fmt.Println("\n[3/3] fetching owner from cloudtrail..\n")
+
+	for i, r := range allResources {
+		owner := tracker.FindOwner(ctx, r)
+
+		// if cloudtrail is older than 90 days, find someone who tagged it recenmtly
+		if owner == "unknown(>90 days)" {
+			if taggedOwner, exists := r.Tags["owner"]; exists {
+				owner = taggedOwner + "(via tags)"
+			}
+		}
+		allResources[i].Creator = owner
+
+	}
+	// Print summary table
+	fmt.Println()
+	w = tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(w, "RESOURCE ID\tTYPE\tCREATOR\tEST. WASTE")
+	fmt.Fprintln(w, "-----------\t----\t-------\t----------")
+
+	for _, r := range allResources {
+		fmt.Fprintf(w, "%s\t%s\t%s\t$%.2f\n", r.ID, r.Type, r.Creator, r.EstimatedMo)
+		totalWaste += r.EstimatedMo
+	}
+	w.Flush()
+
+	fmt.Printf("\nTotal Monthly Waste: $%.2f\n\n", totalWaste)
+
+	fmt.Printf("\nTotal monthly waste: $%.2f\n\n", totalWaste)
+
+	if len(allResources) > 0 {
+		fmt.Printf("[4/4] generating script for remediation...")
+		scriptName := "cleanup.sh"
+
+		err := remediation.CleanupScript(allResources, *region, scriptName)
+		if err != nil {
+			log.Fatalf("failed to gen script: %v", err)
+		}
+		fmt.Printf("sucees! Review the script file and run '%s' to safely backup and delete these resources.\n\n", scriptName)
+	} else {
+		fmt.Printf("No idle resources foudn. your infra is clean")
+	}
+
 }
