@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	region := flag.String("region", "us-east-1", "AWS region to scan")
+	region := flag.String("region", "ap-south-1", "AWS region to scan")
 	flag.Parse()
 
 	ctx := context.Background()
